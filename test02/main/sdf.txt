@@ -1,0 +1,21 @@
+go build github.com/nsf/gocode 
+
+go build github.com/rogpeppe/godef 
+
+go build github.com/zmb3/gogetdoc 
+
+go build github.com/golang/lint/golint 
+
+go build github.com/lukehoban/go-outline 
+
+go build sourcegraph.com/sqs/goreturns 
+
+go build golang.org/x/tools/cmd/gorename 
+
+go build github.com/tpng/gopkgs 
+
+go build github.com/newhook/go-symbols 
+
+go build golang.org/x/tools/cmd/guru 
+
+go build github.com/cweill/gotests 
