@@ -50,7 +50,7 @@ func main() {
 	err2 := ioutil.WriteFile("./output2.txt", d1, 0666) //写入文件(字节数组)
 	check(err2)
 
-	fmt.Println()
+	fmt.Println("this will be the right way to write file")
 	/*****************************  第三种方式:  使用 File(Write,WriteString) 写入文件 ***********************************************/
 	f, err3 := os.Create("./output3.txt") //创建文件
 	check(err3)
