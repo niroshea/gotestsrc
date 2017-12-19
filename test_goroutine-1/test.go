@@ -1,7 +1,7 @@
 /*
 如何理解这种现象呢，可以这么理解：
 所有的goroutine，他们都直接归属于main管理，生成了就挂靠在main名义下，没有什么儿子的儿子goroutine
-都是main 的儿子，只要main没有结束，在等待，goroutine就会持续运行下去
+都是main 的儿子，只要main没有结束，还在等待，goroutine就会持续运行下去
 */
 
 package main
