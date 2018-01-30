@@ -68,15 +68,6 @@ github.com/hyperledger/fabric/common/tools/configtxlator
 #下载chaintool脚本
 curl -L https://github.com/hyperledger/fabric-chaintool/releases/download/v0.10.3/chaintool > /usr/local/bin/chaintool
 
-go get github.com/golang/protobuf/protoc-gen-go \
-&& go get github.com/kardianos/govendor \
-&& go get github.com/golang/lint/golint \
-&& go get golang.org/x/tools/cmd/goimports \
-&& go get github.com/onsi/ginkgo/ginkgo \
-&& go get github.com/axw/gocov \
-&& go get github.com/client9/misspell/cmd/misspell \
-&& go get github.com/AlekSi/gocov-xml
-
 
 #修改docker配置文件
 curl -fsSL https://get.docker.com | sh
@@ -92,6 +83,19 @@ sudo systemctl restart docker (sudo service docker restart)
 
 #google被墙，如何解决golang tools 没法下载的问题
 git clone https://github.com/golang/tools.git $GOPATH/src/golang.org/x/tools
+
+go get github.com/golang/protobuf/protoc-gen-go \
+&& go get github.com/kardianos/govendor \
+&& go get github.com/golang/lint/golint \
+&& go get golang.org/x/tools/cmd/goimports \
+&& go get github.com/onsi/ginkgo/ginkgo \
+&& go get github.com/axw/gocov \
+&& go get github.com/client9/misspell/cmd/misspell \
+&& go get github.com/AlekSi/gocov-xml
+
+#从源码生成镜像
+cd $GOPATH/src/github.com/hyperledger/fabric
+make docker
 
 
 #启动fabric网络
@@ -174,11 +178,78 @@ peer channel create \
 --tls \
 --cafile /etc/hyperledger/fabric/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com//msp/tlscacerts/tlsca.example.com-cert.pem
 
-
 #fabric网络启动之后区块链账本信息存放在每个peer容器的
 /var/hyperledger/production
 
+=============================================================================================================
+区块链应用开发
 
+每个链码都需要实现 Chaincode 接口
+type Chaincode interface{
+    Init(stub ChaincodeStubInterface) pb.Response
+    Invoke(stub ChaincodeStubInterface) pb.Response
+}
 
+Init:当链码收到实例化或者升级类型的交易时，Init方法会被调用。
+Invoke：当链码收到调用invoke或者查询query类型的交易，Invoke方法会被调用。
 
+链码结构：
 
+package main
+import (
+    "github.com/hyperledger/fabric/core/chaincode/shim"
+    pb "github.com/hyperledger/fabric/protos/peer"
+)
+type SimpleChaincode struct{}
+
+func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
+    //该方法中实现链码初始化或升级的处理逻辑
+}
+
+func (t *SimpleChaincode) Invoke (stub shim.ChaincodeStubInterface) pb.Response{
+    //在该方法中实现链码运行照片那个被调用活查询时的处理逻辑
+}
+
+func main(){
+    err := shim.Start(new(SimpleChaincode))
+    if err != nil {
+        fmt.Printf("Error starting Simple chaincode :%s",err)
+    }
+}
+
+其中shim包提供了链码与账本交互的中间层。链码通过shim.ChaincodeStub 提供的方法来读取和修改账本状态。
+pb 提供了Init和Invoke方法需要返回的pb.Response类型。
+
+节点和链码容器之间通过gRPC消息来交互。两者之间采用ChaincodeMessage消息，基本结构如下：
+
+message ChaincodeMessage{
+    enum Type{
+        UNDEFINED = 0;
+        REGISTER = 1;
+        REGISTERED = 2;
+        INIT = 3;
+        READY = 4;
+        TRANSACTION = 5;
+        COMPLETED = 6 ;
+        ERROR = 7;
+        GET_STATE = 8;
+        PUT_STATE = 9;
+        DEL_STATE = 10;
+        INVOKE_CHAINCODE = 11;
+        RESPONSE = 13;
+        GET_STATE_BY_RANGE = 14;
+        GET_QUERY_RESULT = 15;
+        QUERY_STATE_NEXT = 16;
+        QUERY_STATE_CLOSE = 17;
+        KEEPALIVE = 18;
+        GET_HISTORY_FOR_KEY = 19;
+    }
+    Type type = 1;
+    google.protobuf.Timestamp timestamp = 2
+    bytes payload = 3;
+    string txid = 4;
+    SignedProposal  proposal = 5;
+    ChaincodeEvent chaincode_event = 6;
+}
+
+链码容器的shim层是节点与链码交互的中间层，当链码的代码逻辑要读写账本的时候，链码会通过shim层发送响应操作类型的ChaincodeMessage给节点，节点本地操作账本后返回响应消息。客户端收到足够的响应消息，并且有足够的背书节点支持后，就会将这笔交易发送给排序节点进行排序，并最终写入区块链。
