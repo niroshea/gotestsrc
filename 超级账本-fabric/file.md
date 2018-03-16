@@ -253,3 +253,36 @@ message ChaincodeMessage{
 }
 
 链码容器的shim层是节点与链码交互的中间层，当链码的代码逻辑要读写账本的时候，链码会通过shim层发送响应操作类型的ChaincodeMessage给节点，节点本地操作账本后返回响应消息。客户端收到足够的响应消息，并且有足够的背书节点支持后，就会将这笔交易发送给排序节点进行排序，并最终写入区块链。
+
+账本交互API
+
+GetState  查询账本
+PutState  添加一对新键值
+DelState  删除一对键值
+GetStateByRange 查询指定范围内的一对键值
+GetStateByPartialCompositeKey 更具局部复合键返回所有的键值
+GetHistoryForKey 返回某个键的所有历史值。
+GetQueryResult 对状态数据库进行富查询。
+
+
+交易信息相关API 见书296页
+
+参数读取API 297页
+
+其他API 297 页
+
+==========================================================================================
+应用开发案例：
+
+链码结构中 Init方法：
+
+_,args = stub.GetFunctionAndParameters()  获取本次调用的交易中指定的参数。
+第一个返回值：交易参数中的第一个参数
+第二个返回值：交易参数中第二个参数起所有参数的列表。
+
+err := stub.PutState(A,[]byte(strconv.Itoa(Aval)))
+PutState方法，其中key为键值，类型为 string；value为值，类型是字节数组。
+
+最后通过shim.Success(nil) 创建并返回状态为OK的Response消息
+
+

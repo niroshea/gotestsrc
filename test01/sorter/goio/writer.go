@@ -8,6 +8,7 @@ import (
 	"strconv"
 )
 
+// WriteValues xxx
 func WriteValues(values []int, outfile string) error {
 	file, err := os.Create(outfile)
 	if err != nil {
